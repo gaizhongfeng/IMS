@@ -3,13 +3,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.ruoyi</groupId>
-	<artifactId>RuoYi</artifactId>
+	<groupId>com.feng</groupId>
+	<artifactId>feng</artifactId>
 	<version>1.0.8</version>
 	<packaging>jar</packaging>
 
-	<name>RuoYi</name>
-	<description>若依管理系统</description>
+	<name>feng</name>
+	<description>JHD</description>
 	
 	<parent>
 		<groupId>org.springframework.boot</groupId>
