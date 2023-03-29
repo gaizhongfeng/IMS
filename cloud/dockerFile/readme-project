@@ -1,0 +1,20 @@
+运行项目的描述文件
+
+前置条件：
+运行mysql 容器， 容器名为ims-mysql ， 如果mysql 的容器名不是ims-mysql ，
+修改第4步中的 --link 为存在的mysql 容器名
+
+运行容器
+1. 在docker 环境中新建一个目录
+2. 将 ./ims 的文件复制到docker环境
+3. 执行  docker build -t ims-project/test .  创建docker image
+4. docker run --name ims-project --link ims-mysql -p 8088:8085 -d ims-project/test 运行容器
+验证：
+1. 在window 浏览器中输入dockerServerIP:8088  可以打开登录界面
+
+
+注意:
+连接docker数据库，可以修改application-druid.yml，有以下两种方式：
+    1. 连接字符串设置为容器名字 并用 --link 指定
+url: jdbc:mysql://ims-mysql:3306/feng?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&&useSSL=false
+    2. 连接字符串直接设置为容器ip, 获取容器ip方法是进入 容器（docker exec -it） ，cat /etc/hosts
