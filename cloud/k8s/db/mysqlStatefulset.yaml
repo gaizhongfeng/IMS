@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: ims
+spec:
+  selector:
+    matchLabels:
+      app: mysql #必须匹配 .spec.template.metadata.labels
+  serviceName: "mysql"  #声明它属于哪个Headless Service.
+  replicas: 3 #副本数
+  template:
+    metadata:
+      labels:
+        app: mysql # 必须配置 .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: mysql
+        image: ims-mysql/test
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3306
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "123456"
+        volumeMounts:
+        - name: mysql-pvc
+          mountPath: /var/lib/mysql
+
+  volumeClaimTemplates:   #可看作pvc的模板
+  - metadata:
+      name: mysql-pvc
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      storageClassName: "nfs"  #存储类名，改为集群中已存在的
+      resources:
+        requests:
+          storage: 1Gi

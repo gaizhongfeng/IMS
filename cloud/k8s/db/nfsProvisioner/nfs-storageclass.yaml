@@ -1,0 +1,6 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: nfs
+  namespace: ims
+provisioner: examplenfs     #deployment里面ENV字段里的对应

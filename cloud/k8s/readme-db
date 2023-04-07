@@ -1,0 +1,129 @@
+运行MySQL stateful set 的描述文件
+一 NFS 服务器
+    #yum install -y nfs-common nfs-utils  rpcbind
+    # mkdir /nfs2
+    # chmod 777 /nfs/
+    # vim /etc/exports
+    /nfs2 *(insecure,rw,no_root_squash,no_all_squash,sync)
+
+    # systemctl start rpcbind
+    # systemctl start nfs
+    # systemctl stop firewalld
+
+    所有的节点都安装NFS 客户端
+    # yum install -y  nfs-utils
+
+    使用命令查看共享目录
+    # showmount -e NFS_Server_IP
+
+二 storageclass
+1. copy cloud/k8s/db  的所有文件到server
+2. 创建namespace
+    kubectl create ns ims
+3. 进入 nfsProvisioner 目录
+
+创建storageclass
+4. 创建 service account
+        kubectl apply -f serviceaccount.yaml
+    检查
+        kubectl get -f serviceaccount.yaml
+        kubectl get -f serviceaccount.yaml
+
+5. 创建 rbac
+          kubectl apply -f rbac.yaml
+     检查
+          kubectl get -f rbac.yaml
+
+6.  创建storageclass 服务提供者
+        kubectl apply -f nfs-deployment.yaml
+     检查, 下列的命令没有错误
+        kubectl get -f nfs-deployment.yaml
+        kubectl describe -f nfs-deployment.yaml
+        kubectl logs -n ims nfs-provisioner-6b79b4f7df-zhnzc  后边的id不是固定的
+7. 创建storageclass
+        kubectl apply -f nfs-storageclass.yaml
+     检查
+        kubectl get sc -n ims
+
+8. 创建PVC 验证 storageclass
+     先执行, 下列命令，应该都显示"No resources found"
+        kubectl -n ims get pv
+        kubectl -n ims get pvc
+     再去nfs 服务器中查看 /nfs2 目录， 应该是空的
+
+     创建pvc
+        apply -f test-claim.yaml
+
+     检查
+         kubectl get pvc -n ims     出现一个状态为Bound PVC
+         kubectl get pv -n ims      出现一个状态为Bound PV
+         再去nfs 服务器中查看 /nfs2 目录， 出现一个文件夹
+
+     验证之后删除pvc
+         kubectl delete -f test-claim.yaml
+
+三 MySQL stateful set
+    进入cloud/k8s/db 目录
+    1. 创建 Headless service
+         kubectl apply -f mysqlHeadlessSvc.yaml
+
+       验证
+         kubectl get svc -n ims
+
+    2. 创建stateful set
+        kubectl apply -f mysqlStatefulset.yaml
+
+       验证
+        1. 查看pod状态
+            kubectl get pods -n ims   pod 的状态都是running
+
+        2. 进入MySQL查看数据表
+            kubectl -n ims exec -it mysql-0 bash
+            mysql> show databases;      有feng 的database
+            mysql> use feng;
+            mysql> show tables;
+            mysql> select * from sys_menu;
+
+    3. 部署nodeport 网络
+            kubectl apply -f mysqlExternalNet.yaml
+
+       检查
+            kubectl get svc -n ims   可以看到外部是30306 端口
+            用Navicat for MySQL 连接 serverIp:30306  可以成功连接到数据库
+
+
+
+架构：
+    参考architecture.png
+    storage class
+        1. 声明一个service account "nfs-provisioner"
+        2. 声明rbac
+        3. 声明一个deployment 副本数量为1 , 通过volumes挂在到nfs 服务器, 提供nfs服务的信息(nfs provisioner)，
+        4. 声明storageclass ,  provisioner 字段指定为第三步声明的PROVISIONER_NAME的值
+
+    stateful set
+        5. 创建stateful set ,volumeClaimTemplates的storageClassName 指定第4步声明的storageclass, serviceName指定headless svc
+           stateful set 的metadata.name 为 mysql , template 如下，用于关联外部的svc
+                                                   template:
+                                                       metadata:
+                                                         labels:
+                                                           app: mysql
+        6. 创建headless svc ,通过下边的name: mysql 关联到stateful set(metadata.name)
+            spec:
+                 ports:
+                 - port: 3306
+                   name: mysql
+        7. 创建nodePort svc ,  通过下边的selector关联到stateful set
+             selector:
+                app: mysql
+
+
+
+
+
+
+
+
+
+
+
