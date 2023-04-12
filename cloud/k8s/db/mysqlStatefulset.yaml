@@ -7,7 +7,7 @@ spec:
   selector:
     matchLabels:
       app: mysql #必须匹配 .spec.template.metadata.labels
-  serviceName: "mysql"  #声明它属于哪个Headless Service.
+  serviceName: "mysql-svc"  #声明它属于哪个Headless Service.
   replicas: 3 #副本数
   template:
     metadata:

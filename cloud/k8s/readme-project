@@ -1,0 +1,26 @@
+在k8s中运行ims project的描述文件
+
+在ims 的 docker 执行之后会生成 ims-project/test:v1.9
+将cloud/k8s/ims 上传到服务器
+
+1. 测试mysql svc 服务
+    1. 执行命令，将会在ims 的namespace 下创建一个client1 的pod
+        kubectl apply -f test-pod.yaml
+    2. 查看pods
+         kubectl get pods -n ims
+    3. ping mysql headless svc, 可以ping通
+         kubectl -n ims exec client1 ping mysql-svc
+
+2. 部署项目
+    2.1. 部署deployment
+        kubectl apply -f project.yaml
+    2.2. 检查 , 可以看到有一个名为ims-project-xxx 的pods
+        kubectl get pods -n ims
+    2.3 检查pod 的logs, log中没有错误，过一段时间可以看到“open URL : http://localhost:8085”
+        kubectl logs -n ims ims-project-xxx
+
+    2.4. 部署nodeport 网络
+        kubectl apply -f projectExternalNet.yaml
+    2.5 检查网络 , 可以看到project-ext-net , 端口为30085
+        kubectl get svc -n ims
+    2.6 在window 的浏览器中输入vmIP:30085  , 可以打开登录界面

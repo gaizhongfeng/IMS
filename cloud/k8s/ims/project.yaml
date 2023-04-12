@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: ims-project
+  name: ims-project
+  namespace: ims
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ims-project
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ims-project
+    spec:
+      containers:
+      - image: ims-project/test:v1.9
+        name: test
+        imagePullPolicy: IfNotPresent
+        resources: {}
+status: {}
