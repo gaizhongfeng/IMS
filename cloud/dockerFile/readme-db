@@ -3,7 +3,7 @@
 1. 在docker 环境中新建一个目录
 2. 将 ./db 的四个文件复制到docker  环境
 3. 执行  docker build -t ims-mysql/test .   创建docker image
-4. 执行 docker run --name ims-mysql -p 13306:3306 -e MYSQL_ROOT_PASSWORD=123456 -d ims-mysql/test  运行容器
+4. 执行 docker run --name mysql-svc -p 13306:3306 -e MYSQL_ROOT_PASSWORD=123456 -d ims-mysql/test  运行容器
 验证：
 1. 在docker 环境中执行 docker exec -it ims-mysql bash  进入容器
         . 执行 mysql -uroot -p123456  进入mysql

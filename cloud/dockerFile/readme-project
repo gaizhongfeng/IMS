@@ -1,5 +1,15 @@
 运行项目的描述文件
 
+如果数据库连接和端口需要修改，可以将修改好的
+application-druid.yml 和 application.yml
+放到与Dockerfile 同级目录下，然后修改dockerfile, 将这两个配置文件打包进image
+ADD application.yml application.yml
+ADD application-druid.yml application-druid.yml
+
+最后打包新的镜像
+docker build -t ims-project/test:v1.16 .
+
+
 前置条件：
 运行mysql 容器， 容器名为ims-mysql ， 如果mysql 的容器名不是ims-mysql ，
 修改第4步中的 --link 为存在的mysql 容器名
@@ -8,7 +18,7 @@
 1. 在docker 环境中新建一个目录
 2. 将 ./ims 的文件复制到docker环境
 3. 执行  docker build -t ims-project/test:v1.9 .  创建docker image
-4. docker run --name ims-project --link ims-mysql -p 8088:8085 -d ims-project/test:v1.9 运行容器
+4. docker run --name ims-project --link mysql-svc -p 8088:8085 -d ims-project/test:v1.9 运行容器
 验证：
 1. 在window 浏览器中输入dockerServerIP:8088  可以打开登录界面
 
@@ -16,5 +26,5 @@
 注意:
 连接docker数据库，可以修改application-druid.yml，有以下两种方式：
     1. 连接字符串设置为容器名字 并用 --link 指定
-url: jdbc:mysql://ims-mysql:3306/feng?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&&useSSL=false
+url: jdbc:mysql://mysql-svc:3306/feng?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&&useSSL=false
     2. 连接字符串直接设置为容器ip, 获取容器ip方法是进入 容器（docker exec -it） ，cat /etc/hosts
