@@ -54,3 +54,7 @@ ENV FILE_2 initSql2.sql
 // 运行 setup.sh
 RUN chmod a+x $AUTO_RUN_DIR/setup.sh
 
+
+
+IMS\cloud\dockerFile\db-maste-slave 为MySQL master-slave 提供镜像，只是使用的MySQL版本不同
+    docker build -t ims-mysql/test:v2.0 .

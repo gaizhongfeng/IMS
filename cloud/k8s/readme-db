@@ -52,7 +52,7 @@
      再去nfs 服务器中查看 /nfs2 目录， 应该是空的
 
      创建pvc
-        apply -f test-claim.yaml
+        kubectl apply -f test-claim.yaml
 
      检查
          kubectl get pvc -n ims     出现一个状态为Bound PVC
@@ -119,6 +119,59 @@
         7. 创建nodePort svc ,  通过下边的selector关联到stateful set
              selector:
                 app: mysql
+
+
+
+
+
+MySQL  master-slave
+    使用的镜像为 cloud/dockerFile/db-maste-slave，build 镜像命令为：
+        docker build -t ims-mysql/test:v2.0 .
+    使用文件目录为master-slave ，同样需要部署IMS\IMS\cloud\k8s\db 的文件只不过不需要部署mysqlStatefulset.yaml
+    IMS\cloud\k8s\db\master-slave\
+                                mysqlConfigmap-MS.yaml    master和slave 的配置
+                                mysqlStatefulset-MS.yaml  mysql 的statefulset文件
+                                secret.yaml               mysql 的secret文件, 密码用base64 加密  # echo -n "123456" | base64
+    因为 ims 项目现在不支持读写分离，所以在mysqlConfigmap 中注释掉了super-read-only
+
+    注意：1. headless svc 的name 必须是mysql-svc ， 否则在clone-mysql 的时候会找不到master
+         2. 如果要重新运行mysqlStatefulset-MS.yaml ， 要删除pvc 和 nfs 服务器的目录
+
+    运行：
+        1. 部署 nfs, storage class, headless svc , external svc, secret , config map
+           最后部署 mysqlStatefulset-MS.yaml
+
+        2. 验证:
+            2.1 执行命令，所有的pods 状态都是running
+                kubectl get pods -n ims
+            2.2 验证mysql 主从功能
+               2.2.1 进入第一个pod(mysql master) mysql-0 , 创建一个databases
+                        # kubectl exec -it -n ims mysql-0 bash
+                        # mysql -uroot -p123456
+                        mysql> create databases test123;
+                        mysql> show databases;
+               2.2.2 进入第二个pod(mysql slave) mysql-1 , 查看databases , database "test123" 存在
+                        # kubectl exec -it -n ims mysql-1 bash
+                        # mysql -uroot -p123456
+                        mysql> show databases;
+
+               2.2.3 进入第三个pod(mysql slave) mysql-2 , 查看databases , database "test123" 存在
+                        # kubectl exec -it -n ims mysql-1 bash
+                        # mysql -uroot -p123456
+                        mysql> show databases;
+
+    debug:
+         1. 容器运行失败 查看pod log, 下边是以mysql-0 为例：
+            kubectl logs -n ims mysql-0 init-mysql
+            kubectl logs -n ims mysql-0 clone-mysql
+            kubectl logs -n ims mysql-0 mysql
+            kubectl logs -n ims mysql-0 xtrabackup
+
+        2.  备份时.mysql-svc 是headless svc的name
+            ncat --recv-only mysql-$(($ordinal-1)).mysql-svc 3307
+
+
+
 
 
 
