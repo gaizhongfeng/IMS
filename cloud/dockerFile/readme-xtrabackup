@@ -1,0 +1,5 @@
+xtrabackup 的描述文件
+
+Xtrabackup是一个对InnoDB做数据备份的工具，支持在线热备份(备份时不影响数据读写)
+
+docker build -t jstang/xtrabackup:2.3 .
