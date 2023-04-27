@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "nfsProvisioner.crb.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "nfsProvisioner.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "nfsProvisioner.cr.fullname" . }}
+

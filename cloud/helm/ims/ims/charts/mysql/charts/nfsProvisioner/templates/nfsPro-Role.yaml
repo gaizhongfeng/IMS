@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ template "nfsProvisioner.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: ['']
+    resources: ['endpoints']
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+{{- if .Values.rbac.role.rules }}
+  {{ toYaml .Values.rbac.role.rules | nindent 2 }}
+{{- end -}}

@@ -1,0 +1,44 @@
+ims\charts\mysql\charts\nfsProvisioner 的描述文件
+这个helm chart 提供了storageclas ， 在mysql 中使用
+_helpers.tpl                    模板文件
+nfs-deployment.yaml             nfs server 服务提供文件
+nfs-storageclass.yaml           storageclass定义文件
+nfsPro-ClusterRole.yaml         ClusterRole 文件
+nfsPro-ClusterRoleBinding.yaml  ClusterRoleBinding 文件
+nfsPro-Role.yaml                Role 文件
+nfsPro-RoleBinding.yaml         RoleBinding文件
+serviceaccount.yaml             serviceaccount文件
+
+1. 本地调试：
+     切换到  ...mysql\charts 目录
+     > helm install testnfs .\nfsProvisioner --kubeconfig=D:\tmp\admin.conf -n=ims-helm --dry-run
+
+     注意： 如果kubernetes中没有ims-helm namespace 可以手动创建
+        kubectl create ns ims-helm
+
+2. 安装
+    window 安装：
+     > helm install testnfs .\nfsProvisioner --kubeconfig=D:\tmp\admin.conf -n=ims-helm
+
+    k8s 服务器中直接安装
+     # helm install testnfs .\nfsProvisioner -n=ims-helm
+
+2. 结果验证：
+创建一个PVC文件，比如文件名是test-claim.yaml(与k8s中的验证文件一样)，文件内容如下：
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: test-claim1
+  namespace: ims-helm
+spec:
+  accessModes:  ["ReadWriteMany"]
+  resources:
+    requests:
+      storage: 1Mi
+  storageClassName: nfsprovisionernfs
+
+其中namespace为2中-n 指定的值 ， storageClassName 可以通过下边的命令获取
+    kubectl get sc -n ims-helm
+
+详细结果参考cloud/k8s/readme-db  “二 storageclass”
+

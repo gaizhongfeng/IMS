@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nfsProvisioner.deployname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: {{ .Values.strategy.type }}
+  selector:
+    matchLabels:
+      {{- include "nfsProvisioner.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "nfsProvisioner.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "nfsProvisioner.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name | lower }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: nfs-client-root
+              mountPath: /persistentvolumes
+          env:
+            - name: PROVISIONER_NAME
+              value: {{- include "nfsProvisioner.nfsName" .  | indent 1 }}
+            - name: NFS_SERVER
+              value: {{ .Values.NFS.NFS_SERVER }}
+            - name: NFS_PATH
+              value: {{ .Values.NFS.NFS_PATH }}
+      volumes:
+        - name: nfs-client-root
+          nfs:
+            server: {{ .Values.NFS.NFS_SERVER }}
+            path: {{ .Values.NFS.NFS_PATH }}
