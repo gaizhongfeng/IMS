@@ -1,0 +1,4 @@
+# Apply this config only on the master.
+[mysqld]
+log-bin
+default_authentication_plugin = mysql_native_password

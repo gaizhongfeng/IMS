@@ -1,0 +1,75 @@
+IMS\cloud\helm\ims\ims\charts\mysql 的描述文件
+
+***注意：不要将三个statefulset文件一起上传
+
+mysql 的statefulset 的 charts 包含三个版本：
+    1. statefulset.yaml
+        第一版stateful set , mysql 的密码和脚本都hardcode
+        最基本的mysql , 没有备份
+         用到的文件列表：
+            externalService.yaml
+            headless.yaml
+            _helpers.tpl
+            NOTES.txt
+            statefulset.yaml
+    2. MS-statefulset.yaml
+        与MS-secret.yaml，MS-configmap.yaml 一起使用，mysql 的密码和配置文件通过configMap 和 Secret进行存储
+        有备份
+           用到的文件列表：
+                externalService.yaml
+                headless.yaml
+                _helpers.tpl
+                MS-configmap.yaml
+                MS-secret.yaml
+                MS-statefulset.yaml
+                NOTES.txt
+                conf/master.cnf
+                conf/slave.cnf
+    3. MS-statefulset-v2.yaml
+         与MS-secret.yaml，MS-configmap.yaml ，MS-configmap-scripts-v2.yaml 一起使用，在第二个版本基础上将脚本放到configmap中
+         有备份
+             用到的文件列表：
+                externalService.yaml
+                headless.yaml
+                _helpers.tpl
+                MS-configmap-scripts-v2.yaml
+                MS-configmap.yaml
+                MS-secret.yaml
+                MS-statefulset-v2.yaml
+                NOTES.txt
+                conf/master.cnf
+                conf/slave.cnf
+
+其中 IMS\cloud\helm\ims\ims\charts\mysql\templates 中 的下列文件是通用的，无论运行哪个statefulset
+    _helpers.tpl
+    externalService.yaml
+    headless.yaml
+    NOTES.txt
+    conf/master.cnf 和 conf/slave.cnf 在MS-configmap.yaml 中进行的读取
+
+运行：
+    前置条件： IMS\cloud\helm\ims\ims\charts\mysql\charts\nfsProvisioner 已经运行(或许不用先单独运行)
+    上传 IMS\cloud\helm\ims\ims\charts\mysql ， 切换到mysql 上层目录 ， 运行命令
+    helm install testmysql mysql  -n ims-helm
+
+    检查：
+    [root@k8s-master templates]# kubectl get pods -n ims-helm
+    NAME                                     READY   STATUS    RESTARTS   AGE
+    testmysql-0                              2/2     Running   0          119s
+    testmysql-1                              2/2     Running   1          109s
+    testmysql-2                              2/2     Running   1          58s
+    testnfsnfsprovisioner-5b59c9d8cb-ssfbn   1/1     Running   20         26d
+    [root@k8s-master templates]#
+
+    kubectl exec -it -n ims-helm testmysql-0 bash
+    # mysql -uroot -p123456
+    mysql> show databases;
+    mysql> create database test123;
+
+    在这个pod 中的mysql 创建database ,  进入其他pod 中可以看到创建的数据库
+
+
+    卸载：
+    helm uninstall -n ims-helm testmysql
+
+

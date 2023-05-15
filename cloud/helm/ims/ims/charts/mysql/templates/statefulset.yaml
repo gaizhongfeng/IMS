@@ -1,0 +1,53 @@
+apiVersion:  apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "mysql.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "mysql.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  serviceName: {{ template "mysql.hs.name" . }}
+  selector:
+    matchLabels:
+      {{ include "mysql.selector" . }}
+  template:
+    metadata:
+      labels:
+        {{ include "mysql.selector" . }}
+{{- if .Values.podLabels }}
+        {{ toYaml .Values.podLabels | nindent 8 }}
+{{- end }}
+    spec:
+      containers:
+        - name: {{ .Values.containers.name }}
+{{- if .Values.image.tag }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+{{- else }}
+          image: "{{ .Values.image.repository }}"
+{{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+          - name: mysql
+            containerPort: {{ .Values.containers.ports.mysql }}
+          env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: "123456"
+          volumeMounts:
+          - name: mysql-pvc
+            mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-pvc
+      spec:
+        accessModes:
+        {{- range .Values.persistentVolume.accessModes }}
+          - {{ . | quote }}
+        {{- end }}
+        storageClassName: "{{ .Values.persistentVolume.storageClass }}"
+        resources:
+          requests:
+            storage: {{ .Values.persistentVolume.size | quote }}

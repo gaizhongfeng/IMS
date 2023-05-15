@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "mysql.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "mysql.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      {{ include "mysql.selector" . }} #必须匹配 .spec.template.metadata.labels
+  serviceName: {{ template "mysql.hs.name" . }}  #声明它属于哪个Headless Service.
+  replicas:  {{ .Values.replicaCount }} #副本数
+  template:
+    metadata:
+      labels:
+        {{ include "mysql.selector" . }}
+{{- if .Values.podLabels }}
+        {{ toYaml .Values.podLabels | nindent 8 }}
+{{- end }}
+    spec:
+      initContainers:
+      - name: init-mysql
+{{- if .Values.image.tag }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+{{- else }}
+        image: "{{ .Values.image.repository }}"
+{{- end }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+#        command: ['sh', '-c', 'chmod +x /tmp/init-mysql.sh']
+#        command: ['sudo', "--user", "root" , 'sh', '-c', 'chmod +x /tmp/init-mysql.sh' , ]
+        command: ["/bin/sh"]
+        args: ["-c", "/script/init-mysql.sh"]
+        volumeMounts:
+        - name: conf
+          mountPath: /mnt/conf.d
+        - name: config-map
+          mountPath: /mnt/config-map
+        - name: config-map-script
+          mountPath: /script
+          readOnly: true
+
+      - name: clone-mysql
+{{- if .Values.image.tag }}
+        image: "{{ .Values.xtrabackup.image.repository }}:{{ .Values.xtrabackup.image.tag }}"
+{{- else }}
+        image: "{{ .Values.xtrabackup.image.repository }}"
+{{- end }}
+        imagePullPolicy: {{ .Values.xtrabackup.image.pullPolicy }}
+        command: ["/bin/sh"]
+        args: ["-c", "/script/clone-mysql.sh"]
+        volumeMounts:
+        - name: mysql-pvc
+          mountPath: /var/lib/mysql
+          subPath: mysql
+        - name: conf
+          mountPath: /etc/mysql/conf.d
+        - name: config-map-script
+          mountPath: /script
+          readOnly: true
+
+      containers:
+      - name: mysql
+{{- if .Values.image.tag }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+{{- else }}
+        image: "{{ .Values.image.repository }}"
+{{- end }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.containers.ports.mysql }}
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "mysql.secret.name" . }}
+              key: password
+        volumeMounts:
+        - name: mysql-pvc
+          mountPath: /var/lib/mysql
+          subPath: mysql
+        - name: conf
+          mountPath: /etc/mysql/conf.d
+        livenessProbe:
+          exec:
+            command: ["mysqladmin", "ping"]
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds}}
+        readinessProbe:
+          exec:
+            #command: ["mysql","-uroot","-p${MYSQL_ROOT_PASSWORD}","-h", "127.0.0.1", "-e", "SELECT 1"]
+            command:
+            - /bin/sh
+            - "-c"
+            - MYSQL_PWD="${MYSQL_ROOT_PASSWORD}"
+            - mysql -h 127.0.0.1 -u root -e "SELECT 1"
+          initialDelaySeconds:  {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+
+      - name: xtrabackup
+  {{- if .Values.image.tag }}
+        image: "{{ .Values.xtrabackup.image.repository }}:{{ .Values.xtrabackup.image.tag }}"
+  {{- else }}
+        image: "{{ .Values.xtrabackup.image.repository }}"
+  {{- end }}
+        imagePullPolicy: {{ .Values.xtrabackup.image.pullPolicy }}
+        ports:
+        - name: xtrabackup
+          containerPort:  {{ .Values.xtrabackup.port }}
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "mysql.secret.name" . }}
+                key: password
+        command: ["/bin/sh"]
+        args: ["-c", "/script/xtrabackup-script.sh"]
+        volumeMounts:
+        - name: mysql-pvc
+          mountPath: /var/lib/mysql
+          subPath: mysql
+        - name: conf
+          mountPath: /etc/mysql/conf.d
+        - name: config-map-script
+          mountPath: /script
+          readOnly: true
+        resources:
+          requests:
+            cpu: {{ .Values.xtrabackup.resources.cpu }}
+            memory: {{ .Values.xtrabackup.resources.memory }}
+
+      volumes:
+      - name: conf
+        emptyDir: {}
+      - name: config-map
+        configMap:
+          name: {{ template "mysql.configMap.name" . }}
+      - name: config-map-script
+        configMap:
+          name: {{ template "mysql.configMap-script.name" . }}
+          defaultMode: 0777
+  volumeClaimTemplates:   #可看作pvc的模板
+  - metadata:
+      name: mysql-pvc
+    spec:
+      accessModes:
+      {{- range .Values.persistentVolume.accessModes }}
+        - {{ . | quote }}
+      {{- end }}
+      storageClassName: {{ .Values.persistentVolume.storageClass | quote }}  #存储类名，改为集群中已存在的
+      resources:
+        requests:
+          storage: {{ .Values.persistentVolume.size }}

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mysql.hs.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mysql.ss.selector" . | nindent 4 }}
+    headless: "true"
+spec:
+  clusterIP: None
+  ports:
+    - port: {{ .Values.headlessService.port }}
+      name: mysql
+  selector:
+    {{- include "mysql.selector" . | nindent 4 }}

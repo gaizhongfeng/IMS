@@ -1,0 +1,5 @@
+# Apply this config only on slaves.
+[mysqld]
+# super-read-only # ims project not support Read-write separation
+default_authentication_plugin = mysql_native_password
+relay-log = mysql-2-relay-bin
