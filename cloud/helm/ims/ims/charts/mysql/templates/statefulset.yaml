@@ -47,7 +47,7 @@ spec:
         {{- range .Values.persistentVolume.accessModes }}
           - {{ . | quote }}
         {{- end }}
-        storageClassName: "{{ .Values.persistentVolume.storageClass }}"
+        storageClassName: {{ include "storageClass.name" . }}
         resources:
           requests:
             storage: {{ .Values.persistentVolume.size | quote }}

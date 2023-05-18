@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "ims.configMap.name" . }}
+  labels:
+    app: {{ .Values.configMap.name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+data:
+  application-druid.yml: |
+    {{ tpl (.Files.Get "conf/application-druid.yml") . | indent 4 | trim }}
+
+{{- range .Values.extraConfigMaps }}
+  {{ .subPath }} : {{ .data | quote }}
+{{- end }}

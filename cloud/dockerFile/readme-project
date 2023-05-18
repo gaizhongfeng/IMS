@@ -25,6 +25,6 @@ docker build -t ims-project/test:v1.16 .
 
 注意:
 连接docker数据库，可以修改application-druid.yml，有以下两种方式：
-    1. 连接字符串设置为容器名字 并用 --link 指定
+    1. 连接字符串设置为mysql容器名字 并用 --link 指定
 url: jdbc:mysql://mysql-svc:3306/feng?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&&useSSL=false
     2. 连接字符串直接设置为容器ip, 获取容器ip方法是进入 容器（docker exec -it） ，cat /etc/hosts

@@ -125,3 +125,12 @@ Return mysql configMap for script name
 {{- define "mysql.configMap-script.name" -}}
 {{- printf "%s-%s-script" .Chart.Name .Values.configMap.name | trunc 63 | trimSuffix "-"  | quote }}
 {{- end }}
+
+
+{{/*
+storage class name
+*/}}
+{{- define "storageClass.name" -}}
+{{- $Values := dict "Values" .Values "Chart" (dict "Name" "nfsProvisioner") "Release" .Release -}}
+{{ template "nfsProvisioner.scName" $Values }}
+{{- end -}}

@@ -1,0 +1,11 @@
+cloud/dockerFile/ims-helm 的描述文件
+helm 使用的docker 镜像, 可以通过configMap 将application-druid.yml挂在到 /data 下
+来动态的修改数据库连接信息, 与之前ims 的docker镜像不同的一点是
+启动springboot时加了--spring.config.location 参数
+
+使用：
+    docker build -t ims-project/test:v2.10 .
+
+
+如果想在deployment中修改数据库连接，可以在configmap 中导入application-druid.yml，然后将configMap
+挂在到/data 目录下，请参考cloud/helm/ims/ims/templates/deployment.yaml

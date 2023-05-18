@@ -1,0 +1,33 @@
+ims project 的描述文件
+
+主要文件：
+conf
+    application-druid.yml
+templates
+    _helpers.tpl
+    configmap-conf.yaml
+    deployment.yaml
+    service.yaml
+
+application-druid.yml 为数据的配置文件，可以根据需要修改，默认会连接MySQL headless svc
+configmap-conf.yaml  会读取application-druid.yml ，在deployment.yaml 中挂在到 /data 目录下，在springboot项目启动时使用这个配置
+service.yam nodeport svc , 外部提供访问
+
+
+使用如下方式引用mysql 的headless svc name
+{{/*
+mysql headless svc hostname
+*/}}
+{{- define "mysql.host" -}}
+{{- $Values := dict "Values" .Values.mysql "Chart" (dict "Name" "mysql") "Release" .Release -}}
+{{ template "mysql.hs.name" $Values }}
+{{- end -}}
+
+如果要分开运行要替换release为mysql 运行的release
+{{/*
+mysql headless svc hostname
+*/}}
+{{- define "mysql.host" -}}
+{{- $Values := dict "Values" .Values.mysql "Chart" (dict "Name" "mysql") "Release" (dict "Name" "testmysql") -}}
+{{ template "mysql.hs.name" $Values }}
+{{- end -}}

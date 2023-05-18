@@ -131,6 +131,10 @@ persistentVolume:
     - ReadWriteMany
   size: 1Gi
   storageClass: nfs
+
+storage:
+  StorageClass:
+    name: nfs
 #==========================
 nfsProvisioner:
   enabled: true

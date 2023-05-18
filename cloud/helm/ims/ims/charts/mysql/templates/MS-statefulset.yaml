@@ -204,7 +204,7 @@ spec:
       {{- range .Values.persistentVolume.accessModes }}
         - {{ . | quote }}
       {{- end }}
-      storageClassName: {{ .Values.persistentVolume.storageClass | quote }}  #存储类名，改为集群中已存在的
+      storageClassName: {{ include "storageClass.name" . }}
       resources:
         requests:
           storage: {{ .Values.persistentVolume.size }}
